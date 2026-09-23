@@ -97,7 +97,135 @@ def split_documents(documents: list[Document]) -> list[Chunk]:
       - Would splitting on paragraph breaks keep more thoughts intact than
         splitting on a character count?
     """
-    return fallback_split(documents)
+    """
+    Split Markdown documents at paragraph boundaries while preserving
+    the document title and section heading as context.
+    """
+
+    MAX_CHARS = 600
+    chunks: list[Chunk] = []
+
+    for doc in documents:
+        title = ""
+        section = ""
+        paragraph_lines = []
+        index = 0
+
+        def add_paragraph(lines: list[str]) -> None:
+            nonlocal index
+
+            paragraph = " ".join(line.strip() for line in lines).strip()
+
+            if not paragraph:
+                return
+
+            context = []
+
+            if title:
+                context.append(f"# {title}")
+
+            if section:
+                context.append(f"## {section}")
+
+            prefix = "\n\n".join(context)
+
+            if prefix:
+                text = f"{prefix}\n\n{paragraph}"
+            else:
+                text = paragraph
+
+            # Paragraphs in this corpus fit below this limit.
+            # This protects against unexpectedly large paragraphs.
+            if len(text) <= MAX_CHARS:
+                chunks.append(
+                    Chunk(
+                        text=text,
+                        source=doc.source,
+                        index=index,
+                        produced_by="chunker.py::split_documents",
+                    )
+                )
+                index += 1
+                return
+
+            # Fallback for an unusually long paragraph:
+            # split it at sentence boundaries.
+            sentences = paragraph.replace("\n", " ").split(". ")
+            current = ""
+
+            for sentence in sentences:
+                sentence = sentence.strip()
+
+                if not sentence:
+                    continue
+
+                if not sentence.endswith("."):
+                    sentence += "."
+
+                candidate = (
+                    f"{current} {sentence}".strip()
+                    if current
+                    else sentence
+                )
+
+                candidate_text = (
+                    f"{prefix}\n\n{candidate}"
+                    if prefix
+                    else candidate
+                )
+
+                if len(candidate_text) <= MAX_CHARS:
+                    current = candidate
+                else:
+                    if current:
+                        chunks.append(
+                            Chunk(
+                                text=f"{prefix}\n\n{current}" if prefix else current,
+                                source=doc.source,
+                                index=index,
+                                produced_by="chunker.py::split_documents",
+                            )
+                        )
+                        index += 1
+
+                    current = sentence
+
+            if current:
+                chunks.append(
+                    Chunk(
+                        text=f"{prefix}\n\n{current}" if prefix else current,
+                        source=doc.source,
+                        index=index,
+                        produced_by="chunker.py::split_documents",
+                    )
+                )
+                index += 1
+
+        for line in doc.text.splitlines():
+            stripped = line.strip()
+
+            if stripped.startswith("# "):
+                add_paragraph(paragraph_lines)
+                paragraph_lines = []
+                title = stripped[2:].strip()
+                section = ""
+
+            elif stripped.startswith("## "):
+                add_paragraph(paragraph_lines)
+                paragraph_lines = []
+                section = stripped[3:].strip()
+
+            elif not stripped:
+                add_paragraph(paragraph_lines)
+                paragraph_lines = []
+
+            else:
+                paragraph_lines.append(stripped)
+
+        add_paragraph(paragraph_lines)
+
+    return chunks
+    #return fallback_split(documents)
 
 
 def describe(chunks: list[Chunk]) -> str:

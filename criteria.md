@@ -20,30 +20,9 @@ pipeline earns credit; *"80% seemed reasonable"* does not.
 3. When I ask a question my documents clearly don't cover, the relevance gate
    stops it and the system returns "I don't have enough information about
    that" — in at least 4 of 5 tries.
-4. The system should return 1 or more destinations sources related to the information in answer
+4. 
 
-> Why?
-1. Information about a destination can be in destination specific guides, regional guides, or topic specific guides.I expect the correct information to appear in the retrieved chunks for most questions, but not necessarily every question.
-2.  The corpus contains overlapping information across destination guides and
-regional topic guides. Naming a source lets the user trace the answer back to
-the document that supplied the information.
-3. The corpus only covers travel information for a limited set of destinations and
-topics. Questions outside those destinations or topics should not be answered
-from weakly related chunks. I chose 4 of 5 because similarity between an
-out-of-scope question and unrelated travel text may occasionally cause the
-relevance gate to pass a result.
-4. The corpus is already organized into Markdown sections such as "Getting there",
-"Getting around", "Eat and drink", "What to see", and "When to go". These
-sections usually contain one coherent travel topic, so preserving those
-boundaries should keep related information together. I allow 1 of 5 to fail
-because some sections may be too large and require an additional split.
-5. The purpose of the corpus is to help users make travel decisions across several
-destinations. Information is often organized by a travel need, such as
-accessibility, food, walking, or season, and those documents compare multiple
-destinations. A useful answer should therefore connect the retrieved information
-back to at least one relevant destination. I chose 4 of 5 because some factual
-questions may retrieve useful information without clearly supporting a
-destination recommendation.
+
 
 ---
 
@@ -55,7 +34,7 @@ contains the answer.
 **Why this target:**
 <!-- e.g. "One of my questions is about a topic only two documents mention, so
      I expect that one to be hard." -->
-
+ Information about a destination can be in destination specific guides, regional guides, or topic specific guides.I expect the correct information to appear in the retrieved chunks for most questions, but not necessarily every question.
 ---
 
 ## 2. Every answer names a source
@@ -65,7 +44,9 @@ Every answer the system produces names at least one source document.
 **Why this target:**
 <!-- Why all five and not four? What about your setup makes that achievable —
      or what would have to go wrong for it not to be? -->
-
+The corpus contains overlapping information across destination guides and
+regional topic guides. Naming a source lets the user trace the answer back to
+the document that supplied the information.
 ---
 
 ## 3. The relevance gate stops out-of-corpus questions
@@ -82,7 +63,11 @@ in at least 4 of 5 tries.
 **Why this target:**
 <!-- What did your distances look like when you set the cutoff in Milestone 4?
      Was there a clean gap, or did the two groups overlap? -->
-
+The corpus only covers travel information for a limited set of destinations and
+topics. Questions outside those destinations or topics should not be answered
+from weakly related chunks. I chose 4 of 5 because similarity between an
+out-of-scope question and unrelated travel text may occasionally cause the
+relevance gate to pass a result.
 ---
 
 ## 4. Something about your chunks
@@ -99,11 +84,15 @@ in at least 4 of 5 tries.
        - "No chunk is shorter than 200 characters, since anything below that
           in my corpus turned out to be a heading with no content under it." -->
 
-
+At least 4 of 5 sampled chunks should preserve a complete topic or thought
+   without cutting a sentence in the middle.
 
 **Why this target:**
-
-
+The corpus is already organized into Markdown sections such as "Getting there",
+"Getting around", "Eat and drink", "What to see", and "When to go". These
+sections usually contain one coherent travel topic, so preserving those
+boundaries should keep related information together. I allow 1 of 5 to fail
+because some sections may be too large and require an additional split.
 
 ---
 
@@ -117,9 +106,17 @@ in at least 4 of 5 tries.
      present — anything, as long as it names a number or an observable
      outcome. -->
 
-
+For at least 4 of my 5 in-scope questions, the system should identify at
+   least one destination related to the information in the answer.
 
 **Why this target:**
+The purpose of the corpus is to help users make travel decisions across several
+destinations. Information is often organized by a travel need, such as
+accessibility, food, walking, or season, and those documents compare multiple
+destinations. A useful answer should therefore connect the retrieved information
+back to at least one relevant destination. I chose 4 of 5 because some factual
+questions may retrieve useful information without clearly supporting a
+destination recommendation.
 
 
 
