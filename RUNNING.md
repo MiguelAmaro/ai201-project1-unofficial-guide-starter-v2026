@@ -148,7 +148,7 @@ The five stages matter more than they look. In unit 2 you diagnose each failure
 by naming which stage caused it, so it's worth knowing now which file is which.
 
 ---
-
+ 
 ## About rate limits
 
 The free tier allows a small number of calls per minute. `generate.py` handles

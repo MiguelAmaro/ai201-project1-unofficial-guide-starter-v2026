@@ -14,6 +14,36 @@ pipeline earns credit; *"80% seemed reasonable"* does not.
 
 > Missing your own targets next unit costs you nothing. Setting a target so
 > easy you can't miss it does.
+1. For at least 4 of my 5 test questions, the retrieved chunks include one
+   that contains the answer.
+2. Every answer the system produces names at least one source document.
+3. When I ask a question my documents clearly don't cover, the relevance gate
+   stops it and the system returns "I don't have enough information about
+   that" — in at least 4 of 5 tries.
+4. The system should return 1 or more destinations sources related to the information in answer
+
+> Why?
+1. Information about a destination can be in destination specific guides, regional guides, or topic specific guides.I expect the correct information to appear in the retrieved chunks for most questions, but not necessarily every question.
+2.  The corpus contains overlapping information across destination guides and
+regional topic guides. Naming a source lets the user trace the answer back to
+the document that supplied the information.
+3. The corpus only covers travel information for a limited set of destinations and
+topics. Questions outside those destinations or topics should not be answered
+from weakly related chunks. I chose 4 of 5 because similarity between an
+out-of-scope question and unrelated travel text may occasionally cause the
+relevance gate to pass a result.
+4. The corpus is already organized into Markdown sections such as "Getting there",
+"Getting around", "Eat and drink", "What to see", and "When to go". These
+sections usually contain one coherent travel topic, so preserving those
+boundaries should keep related information together. I allow 1 of 5 to fail
+because some sections may be too large and require an additional split.
+5. The purpose of the corpus is to help users make travel decisions across several
+destinations. Information is often organized by a travel need, such as
+accessibility, food, walking, or season, and those documents compare multiple
+destinations. A useful answer should therefore connect the retrieved information
+back to at least one relevant destination. I chose 4 of 5 because some factual
+questions may retrieve useful information without clearly supporting a
+destination recommendation.
 
 ---
 
