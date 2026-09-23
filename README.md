@@ -124,10 +124,15 @@ without reading what came before or after?
      visible. Milestone 4. -->
 
 **Question:**
-
+Which town is easiest to get around in for someone with limited mobility?
 **Answer:**
 
 ```
+Thornby Wells is the easiest town in the region for someone with limited
+mobility (from `guide_accessibility.md`).
+
+Sources retrieved: guide_accessibility.md, guide_corry_vale.md,
+guide_walking.md
 ```
 
 **My relevance cutoff:**
@@ -143,7 +148,17 @@ without reading what came before or after?
 
 | Question | In corpus? | Best distance |
 |---|---|---|
-|  |  |  |
+| When should I go to Pellew Sands for the beach without the crowds? | Yes | 0.261 |
+| Which town is easiest to get around in for someone with limited mobility? | Yes | 0.358 |
+| Is cash still useful in Marchwood, and where might I need it? | Yes | 0.322 |
+| What are the best times to visit Kestrelford and Halden Bay? | Yes | 0.282 |
+| Where can I see a lighthouse in the region? | Yes | 0.504 |
+
+| What is the capital of Mongolia? | No | 0.803 |
+| How do I change the oil in a diesel engine? | No | 0.888 |
+| Who won the 1994 World Cup? | No | 0.975 |
+| What is the recommended dosage of ibuprofen for a headache? | No | 0.835 |
+| How do I write a for loop in Rust? | No | 0.836 |
 
 ## How I Used AI
 
