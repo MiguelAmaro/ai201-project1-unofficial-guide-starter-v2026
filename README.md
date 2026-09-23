@@ -27,6 +27,8 @@
 
      Milestone 5. -->
 
+The corpus contains travel information about a set of towns and destinations in one region. The system lets users ask specific questions about a town or ask for recommendations based on needs such as accessibility, transportation, food, walking, or season. It retrieves relevant information from both town-specific and regional guides and uses those sources to answer the question. The goal is to make the corpus easier to explore without having to read every guide individually.
+
 ## Chunking Strategy
 
 **Chunk size:** 600 characters
@@ -171,9 +173,10 @@ guide_walking.md
 
      Milestone 5. -->
 
-**1.**
 
-**2.**
+**1.** I asked ChatGPT to help me design a chunking strategy after I inspected the corpus. It suggested splitting by Markdown structure and paragraph boundaries instead of using the starter's fixed 800-character windows. I used that idea, but adjusted the implementation and tested it against my corpus until the chunks stayed within about 600 characters and preserved the section context.
+
+**2.** I asked ChatGPT to help me interpret the retrieval distances and relevance threshold. It explained the threshold as the maximum distance I was willing to accept and helped me compare my in-scope and out-of-scope results. I then chose a cutoff of 0.5 based on my own measured distances, where the in-scope questions were around 0.26–0.36 and the out-of-scope questions started around 0.80.
 
 <!-- ── Stretch features ─────────────────────────────────────────────────────
      Doing one? Say so here BEFORE you start. A feature this README never
