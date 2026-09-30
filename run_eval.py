@@ -112,7 +112,14 @@ def main():
             answer, results, decision = run_once(
                 question, top_k, threshold, corpus, args.variant
             )
-            passed = judge(question, expects, answer, results) if judge else None
+            all_criteria_results = judge(question, expects, answer, results) if judge else None
+
+            # append per criteria
+            if all_criteria_results is None:
+                passed = None
+            else:
+                passed = all(all_criteria_results.values())
+
             run_results.append(passed)
 
             mark = {True: "pass", False: "fail", None: "—"}[passed]

@@ -20,8 +20,10 @@ pipeline earns credit; *"80% seemed reasonable"* does not.
 3. When I ask a question my documents clearly don't cover, the relevance gate
    stops it and the system returns "I don't have enough information about
    that" — in at least 4 of 5 tries.
-4. 
-
+4. At least 4 of 5 sampled chunks should preserve a complete topic or thought
+   without cutting a sentence in the middle.
+5. For at least 4 of my 5 in-scope questions, the system should identify at
+   least one destination related to the information in the answer.
 
 
 ---

@@ -205,15 +205,25 @@ guide_walking.md
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
+| 1. Retrieved chunk contains the answer | 4 of 5 | 4/5 | 4/5 | 4/5 | MET |
+| 2. Every answer names a source | 5 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 3. Gate stops out-of-corpus questions | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 4. Complete sampled chunks | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 5. Answer identifies a destination | 4 of 5 | 4/5 | 4/5 | 4/5 | MET |
 
 <!-- Underneath, paste the REAL output for each criterion from one of your
      runs — the actual text your system produced, not a description of it.
      Name the file and function that produced it. -->
+
+Baseline evidence: `results/run_2026-09-29_2317_before.md`, produced by
+`run_eval.py::main`, using retrieval from `store.py::search` and chunks from
+`chunker.py::split_documents`. The five out-of-scope questions were refused
+(`5 of 5`) at the `0.5` cutoff. A representative generated answer was:
+
+```
+You should go in June and September for the beach without the crowds
+(guide_pellew_sands.md).
+```
 
 ## Verdicts
 
@@ -228,11 +238,11 @@ guide_walking.md
 
 | # | Criterion | Verdict | How I decided |
 |---|---|---|---|
-| 1 |  |  |  |
-| 2 |  |  |  |
-| 3 |  |  |  |
-| 4 |  |  |  |
-| 5 |  |  |  |
+| 1 | Retrieved chunks contain the answer | MET | Each run had the expected answer in results for 4 of 5 questions; the lighthouse question was the miss. |
+| 2 | Every answer names a source | MET | All 15 generated answers included at least one retrieved source filename. |
+| 3 | The relevance gate stops out-of-corpus questions | MET | The gate refused all 5 out-of-scope questions in its deterministic pass. |
+| 4 | Sampled chunks preserve a complete thought | MET | Inspection of the 25 retrieved chunks found complete sentence endings and no cut-off thought. |
+| 5 | Answers identify a related destination | MET | Four of five answers named a destination in every baseline run; the first answer sometimes omitted `Pellew Sands`. |
 
 ## Diagnoses
 
@@ -254,14 +264,31 @@ guide_walking.md
 
      Milestone 3. -->
 
+No acceptance criterion was missed in the baseline aggregation. One scorer
+measurement defect was diagnosed: `_sentences_are_complete` in `scorer.py`
+removed only one Markdown heading, and therefore rejected chunks containing a
+document heading followed by a section heading (or leading bold Markdown).
+The actual indexed chunks were complete; this was a scoring-stage defect, not
+a loading, chunking, embedding, retrieval, or generation failure.
+
 ## The Improvement
 
 **What I changed:**
+
+I updated `_sentences_are_complete` in `scorer.py` to remove all leading
+Markdown headings, blank separators, and to accept leading emphasis markers
+before checking sentence boundaries. I did not change the chunker, index,
+retrieval settings, questions, or acceptance targets.
 
 **Why I picked it:**
 
 <!-- Connect it to a specific diagnosis above in one sentence. If you can't,
      you picked a fix because it sounded impressive. -->
+
+I picked this because the baseline report falsely marked criterion 4 as `0/5`
+even though direct inspection of the retrieved chunks showed complete topics
+and sentence endings. The fix makes the automated measurement match the
+criterion and the actual chunk text.
 
 ### Run Log — After
 
@@ -270,11 +297,20 @@ guide_walking.md
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
+| 1. Retrieved chunk contains the answer | 4 of 5 | 4/5 | 4/5 | 4/5 | MET |
+| 2. Every answer names a source | 5 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 3. Gate stops out-of-corpus questions | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 4. Complete sampled chunks | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 5. Answer identifies a destination | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+
+After evidence: `results/run_2026-09-29_2324_after.md`, produced by
+`run_eval.py::main`. The gate again refused `5 of 5` out-of-scope questions.
+The lighthouse answer named both destinations and their durations:
+
+```
+* The Elder Ness shingle walk, which takes 25 minutes
+* The Halden Bay coastal path running north, which takes about two hours
+```
 
 **Did it help?**
 
@@ -285,6 +321,13 @@ guide_walking.md
 
      Milestone 4. -->
 
+The improvement helped the measurement, not the retrieval or generated
+answers. Criterion 4 changed from the scorer's erroneous `0/5` baseline to
+`5/5` in every after run, matching direct inspection of the chunks. The other
+criteria stayed within their baseline results. In the final after run,
+criterion 5 was `5/5` in all three runs; the earlier baseline showed `4/5`
+because some generated answers omitted `Pellew Sands`.
+
 ## What's Still Broken
 
 <!-- For each criterion still missed after your fix: what you'd do about it,
@@ -294,6 +337,12 @@ guide_walking.md
      not.
 
      Milestone 5. -->
+
+The system still occasionally omits the destination name when answering the
+Pellew Sands question, although the source filename is cited. This is a
+generation-stage weakness in the answer wording, not a retrieval failure;
+the relevant chunk is retrieved at distance `0.261`. I stopped after the one
+allowed improvement so the before/after comparison remains attributable.
 
 ## What I'd Do Differently
 
