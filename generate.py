@@ -33,6 +33,7 @@ import json
 import os
 import sys
 import time
+from contextvars import ContextVar
 
 import config
 
@@ -43,6 +44,9 @@ _session_output_tokens = 0
 _cache_hits = 0
 _client = None
 _budget_warned = False
+query_measurements: ContextVar[dict | None] = ContextVar(
+    "query_measurements", default=None
+)
 
 
 class QuotaGuard(Exception):
@@ -142,6 +146,16 @@ def _record_tokens(response) -> None:
             return
         _session_prompt_tokens += int(getattr(meta, "prompt_token_count", 0) or 0)
         _session_output_tokens += int(getattr(meta, "candidates_token_count", 0) or 0)
+        measurements = query_measurements.get()
+        if measurements is not None:
+            prompt_tokens = getattr(meta, "prompt_token_count", None)
+            output_tokens = getattr(meta, "candidates_token_count", None)
+            measurements["input_tokens"] = (
+                int(prompt_tokens) if prompt_tokens is not None else None
+            )
+            measurements["output_tokens"] = (
+                int(output_tokens) if output_tokens is not None else None
+            )
     except Exception:
         pass  # accounting never breaks the thing it is accounting for
 
@@ -215,6 +229,7 @@ def generate(prompt: str, system: str | None = None, cache: bool = True) -> str:
     """
     global _session_calls, _cache_hits
 
+    measurements = query_measurements.get()
     use_cache = cache and config.CACHE_ENABLED
     key = _cache_key(prompt, system)
 
@@ -222,7 +237,12 @@ def generate(prompt: str, system: str | None = None, cache: bool = True) -> str:
         hit = _cache_read(key)
         if hit is not None:
             _cache_hits += 1
+            if measurements is not None:
+                measurements.update(cache_hit=True, input_tokens=0, output_tokens=0)
             return hit
+
+    if measurements is not None:
+        measurements["cache_hit"] = False
 
     _check_budget()
 

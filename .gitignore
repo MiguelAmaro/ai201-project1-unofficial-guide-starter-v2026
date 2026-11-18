@@ -19,6 +19,9 @@ chroma/
 # Cached model responses
 .cache/
 
+# Local query logs may contain questions and answers.
+logs/
+
 # OS noise
 .DS_Store
 Thumbs.db

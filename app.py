@@ -14,6 +14,9 @@ editing config.py.
 """
 
 import argparse
+from datetime import datetime, timezone
+import json
+from pathlib import Path
 import sys
 import time
 
@@ -183,6 +186,7 @@ def ask_pipeline(
     threshold=None,
     on_gate=None,
     on_prompt=None,
+    on_retrieval=None,
 ):
     """Retrieve, gate, answer. Returns the outcome and prints nothing.
 
@@ -193,11 +197,12 @@ def ask_pipeline(
     when to refuse would be a second cutoff you'd have to keep in step with
     this one, and it would drift.
 
-    The two optional callbacks let the command line print as it goes without
+    The optional callbacks let the command line print as it goes without
     this function knowing anything about printing: `on_gate` is handed the gate
     decision as soon as it's made, and `on_prompt` is handed the assembled
     prompt just before it goes out — that's how `--show-prompt` shows you the
-    prompt while the model is still thinking rather than after.
+    prompt while the model is still thinking rather than after. `on_retrieval`
+    observes the results for audit logging without changing the returned dict.
     """
     from store import search
     import gate
@@ -209,6 +214,8 @@ def ask_pipeline(
         corpus=corpus or config.CORPUS,
         variant=variant,
     )
+    if on_retrieval is not None:
+        on_retrieval(results)
     decision = gate.check(results, threshold=threshold)
     if on_gate is not None:
         on_gate(decision)
@@ -234,6 +241,89 @@ def ask_pipeline(
     outcome["answer"] = answer_from_chunks(question, results)
     outcome["sources"] = sorted({r.source for r in results})
     return outcome
+
+
+def _append_run(record):
+    log_path = Path(__file__).resolve().parent / "logs" / "runs.jsonl"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with log_path.open("a", encoding="utf-8") as log:
+        log.write(json.dumps(record, ensure_ascii=False, allow_nan=False) + "\n")
+
+
+def instrumented_ask(
+    question,
+    corpus=None,
+    variant="default",
+    top_k=None,
+    threshold=None,
+    on_gate=None,
+    on_prompt=None,
+):
+    """Run and log one query; duration is pipeline elapsed time, not CPU time."""
+    import generate
+
+    measurements = {"cache_hit": None, "input_tokens": None, "output_tokens": None}
+    measurement_token = generate.query_measurements.set(measurements)
+    record = {
+        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "question": question,
+        "answer": None,
+        "status": "error",
+        "duration_ms": None,
+        "corpus": corpus or config.CORPUS,
+        "variant": variant,
+        "best_distance": None,
+        "threshold": config.THRESHOLD if threshold is None else threshold,
+        "sources": [],
+        "error_type": None,
+    }
+
+    def observe_retrieval(results):
+        record["sources"] = sorted({result.source for result in results})
+
+    def observe_gate(decision):
+        if record["sources"]:
+            record["best_distance"] = decision.best_distance
+        record["threshold"] = decision.threshold
+        if on_gate is not None:
+            on_gate(decision)
+
+    try:
+        start_time = time.perf_counter()
+        try:
+            outcome = ask_pipeline(
+                question,
+                corpus=corpus,
+                variant=variant,
+                top_k=top_k,
+                threshold=threshold,
+                on_gate=observe_gate,
+                on_prompt=on_prompt,
+                on_retrieval=observe_retrieval,
+            )
+        finally:
+            duration_ms = (time.perf_counter() - start_time) * 1000
+    except BaseException as exc:
+        record["duration_ms"] = duration_ms
+        record["error_type"] = type(exc).__name__
+        record.update(measurements)
+        try:
+            _append_run(record)
+        except Exception as log_error:
+            print(
+                f"Audit log write failed: {type(log_error).__name__}",
+                file=sys.stderr,
+            )
+        raise
+    else:
+        record["duration_ms"] = duration_ms
+        record["answer"] = outcome["answer"]
+        record["status"] = "refused" if outcome["refused"] else "answered"
+        record.update(measurements)
+        _append_run(record)
+        return outcome, duration_ms
+    finally:
+        generate.query_measurements.reset(measurement_token)
 
 
 def _ask_one(
@@ -262,8 +352,7 @@ def _ask_one(
         print("=" * 70)
         print(prompt)
         print("=" * 70)
-
-    outcome = ask_pipeline(
+    outcome, duration_ms = instrumented_ask(
         question,
         corpus=corpus,
         variant=variant,
@@ -272,13 +361,13 @@ def _ask_one(
         on_gate=print_distances if show_distances else None,
         on_prompt=print_prompt if show_prompt else None,
     )
-
     if outcome["refused"]:
         print(f"\n{gate.REFUSAL}\n")
         return gate.REFUSAL
 
     print(f"\n{outcome['answer']}\n")
     print(f"Sources retrieved: {', '.join(outcome['sources'])}\n")
+    print(f"Time taken: {duration_ms:.3f} ms")
     return outcome["answer"]
 
 

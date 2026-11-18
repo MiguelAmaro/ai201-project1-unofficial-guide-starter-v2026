@@ -206,6 +206,11 @@ python serve.py                    # locally, on port 5000
 gunicorn serve:app                 # the way a host starts it
 ```
 
+# Usage Example
+```bash
+python app.py --corpus city_guides ask "Which town is easiest to get around for a visitor with limited mobility?"
+```
+
 | Thing | What it does |
 |---|---|
 | `POST /ask` | Send `{"question": "..."}`, get the answer and its sources back as JSON |
@@ -217,8 +222,16 @@ gunicorn serve:app                 # the way a host starts it
 > the first request after a quiet spell waits roughly a minute for it to wake
 > up. That's the tier, not your code.
 
-`serve.py` has **no logging and no timing in it on purpose** — building that is
-the unit 9 exercise, and it is easier to instrument something you wrote.
+CLI questions and valid `POST /ask` requests append one JSON object per query
+to `logs/runs.jsonl` beside `app.py`. The log contains questions and answers,
+so keep it private. Failed queries are logged and still raise or return an
+error. Invalid HTTP requests without a question do not run the pipeline.
+
+`duration_ms` is elapsed pipeline latency measured with `time.perf_counter()`;
+it is not total CLI startup time or CPU time. It includes the CLI's optional
+gate and prompt callbacks, but excludes final answer printing and log writing.
+Token counts come from the individual model response, or are `null` when not
+reported; a cache hit uses zero tokens. A refusal has no model usage.
 
 ---
 

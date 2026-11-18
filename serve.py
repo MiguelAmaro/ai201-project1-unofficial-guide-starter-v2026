@@ -20,11 +20,7 @@ Why this exists: `app.py` runs once and exits, which is fine on your laptop
 and impossible to deploy. A hosted service has to stay up and wait for
 requests. This is the smallest thing that does that.
 
-⚠️ There is deliberately no logging, no timing and no metrics in this file.
-Unit 9 has you build the structured log yourself — the request line, the
-timing field everyone skips, the whole instrument-before-you-deploy exercise.
-Shipping a logger here would hand you the answer to that. Add yours in unit 9;
-this file stays the bare shell until then.
+Query timing and audit logging are shared with the CLI in app.py.
 """
 
 import os
@@ -71,7 +67,7 @@ def ask():
     system working — it is an answer, and the JSON says so with
     `"refused": true` so whatever calls this can tell the two apart.
     """
-    from app import ask_pipeline
+    from app import instrumented_ask
 
     payload = request.get_json(silent=True) or {}
     question = (payload.get("question") or "").strip()
@@ -88,7 +84,7 @@ def ask():
         )
 
     try:
-        outcome = ask_pipeline(question, corpus=config.CORPUS)
+        outcome, _ = instrumented_ask(question, corpus=config.CORPUS)
     except Exception as exc:  # noqa: BLE001 — a reader gets this, not a traceback
         return jsonify({"error": f"{type(exc).__name__}: {exc}"}), 500
 
